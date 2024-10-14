@@ -1,22 +1,21 @@
 import fs from 'node:fs/promises'
 import GpxParser from 'gpxparser'
 
+function deg2rad(deg) {
+    return deg * (Math.PI/180)
+}
+
 function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the earth in km
-    const dLat = deg2rad(lat2-lat1);  // deg2rad below
-    const dLon = deg2rad(lon2-lon1);
+    const R = 6371 // Radius of the earth in km
+    const dLat = deg2rad(lat2-lat1)  // deg2rad below
+    const dLon = deg2rad(lon2-lon1)
     const a =
         Math.sin(dLat/2) * Math.sin(dLat/2) +
         Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
         Math.sin(dLon/2) * Math.sin(dLon/2)
-    ;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const d = R * c * 1000; // Distance in meters
-    return d;
-}
-
-function deg2rad(deg) {
-    return deg * (Math.PI/180)
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+    return R * c * 1000 // Return distance in meters
 }
 
 function duration2seconds(duration) {
@@ -67,7 +66,7 @@ function adjustTimes(track, startTime /* in ms since 1970 */, totalDuration /* i
 
 async function readGPXFile(filePath) {
     try {
-        const data = await fs.readFile(filePath);
+        const data = await fs.readFile(filePath)
         const gpx = new GpxParser()
         gpx.parse(data.toString())
         if (!gpx.tracks || gpx.tracks.length !== 1 || !gpx.tracks[0].points || gpx.tracks[0].points.length < 1) {
@@ -83,14 +82,14 @@ async function readGPXFile(filePath) {
     }
 }
 
-let startTime = Date.parse('2024-10-14T12:00:00')
-const totalDuration = duration2seconds('1:10:00')
+let startTime = Date.parse('2024-10-08T11:00:00')
+const totalDuration = duration2seconds('1:25:00')
 const { name, track } = await readGPXFile('/Users/torsten/Downloads/Bali-Marina.gpx')
 const adjusted = adjustTimes(track, startTime, totalDuration)
 
 function printGPX(name, track) {
     let buffer = '<?xml version="1.0" encoding="UTF-8"?>\n'
-    buffer += '<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" version="1.1">\n'
+    buffer += '<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" version="1.1" creator="strava.com">\n'
     buffer += `<metadata><name>${name}</name></metadata>\n`
     buffer += '  <trk>\n'
     buffer += `    <name>${name}</name>\n`

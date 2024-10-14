@@ -40,6 +40,31 @@ function getTrackLength(track) {
     return distance
 }
 
+function adjustTimes(track, startTime /* in ms since 1970 */, totalDuration /* in seconds */) {
+    const results = []
+    if (track && track.length > 0) {
+        const totalDistance = getTrackLength(track)
+        const startPoint = track[0]
+        let lastPoint = null
+        for (const currPoint of track) {
+            if (lastPoint) {
+                const distance = getDistance(lastPoint.lat, lastPoint.lon, currPoint.lat, currPoint.lon)
+                startTime += totalDuration * distance / totalDistance * 1000
+                const time = new Date(startTime).toISOString()
+                results.push(Object.assign({}, currPoint, { time }))
+            }
+            lastPoint = currPoint
+        }
+        if (lastPoint) { // Assume circular track
+            const distance = getDistance(startPoint.lat, startPoint.lon, lastPoint.lat, lastPoint.lon)
+            startTime += totalDuration * distance / totalDistance * 1000
+            const time = new Date(startTime).toISOString()
+            results.push(Object.assign({}, lastPoint, { time }))
+        }
+    }
+    return results
+}
+
 async function readGPXFile(filePath) {
     try {
         const data = await fs.readFile(filePath);
@@ -62,6 +87,11 @@ let startTime = Date.parse('2024-10-14T12:00:00')
 const totalDuration = duration2seconds('1:10:00')
 const { name, track } = await readGPXFile('/Users/torsten/Downloads/Bali-Marina.gpx')
 console.log('--N-->', name)
+const adjusted = adjustTimes(track, startTime, totalDuration)
+for (const point of adjusted) {
+    console.log('----->', point)
+}
+/*
 if (track && track.length > 0) {
     const totalDistance = getTrackLength(track)
     console.log('--L-->', totalDistance)
@@ -88,6 +118,7 @@ if (track && track.length > 0) {
     }
     console.log('----->', totalDistance / totalDuration * 3.6)
 }
+*/
 
 /*
 let x = Date.parse('2024-10-13T00:19:32')

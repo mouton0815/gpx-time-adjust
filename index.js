@@ -86,39 +86,26 @@ async function readGPXFile(filePath) {
 let startTime = Date.parse('2024-10-14T12:00:00')
 const totalDuration = duration2seconds('1:10:00')
 const { name, track } = await readGPXFile('/Users/torsten/Downloads/Bali-Marina.gpx')
-console.log('--N-->', name)
 const adjusted = adjustTimes(track, startTime, totalDuration)
-for (const point of adjusted) {
-    console.log('----->', point)
-}
-/*
-if (track && track.length > 0) {
-    const totalDistance = getTrackLength(track)
-    console.log('--L-->', totalDistance)
-    const startPoint = track[0]
-    // const startTime = startPoint.time.getTime()
-    let lastPoint = null
-    for (const currPoint of track) {
-        if (lastPoint) {
-            const distance = getDistance(lastPoint.lat, lastPoint.lon, currPoint.lat, currPoint.lon)
-            const duration = totalDuration * distance / totalDistance
-            //console.log(`---${duration}-->`, currPoint)
-            startTime += duration * 1000
-            const time = new Date(startTime).toISOString()
-            console.log(`---${distance}\t${duration}\t${currPoint.time.toISOString()}\t${time}`)
-        }
-        lastPoint = currPoint
+
+function printGPX(name, track) {
+    let buffer = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    buffer += '<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" version="1.1">\n'
+    buffer += `<metadata><name>${name}</name></metadata>\n`
+    buffer += '  <trk>\n'
+    buffer += `    <name>${name}</name>\n`
+    buffer += '    <trkseg>\n'
+    for (const point of track) {
+        buffer += `      <trkpt lat="${point.lat}" lon="${point.lon}">\n`
+        buffer += `        <ele>${point.ele}</ele>\n`
+        buffer += `        <time>${point.time}</time>\n`
+        buffer += '      </trkpt>\n'
     }
-    if (lastPoint) { // Assume circular track
-        const distance = getDistance(startPoint.lat, startPoint.lon, lastPoint.lat, lastPoint.lon)
-        const duration = totalDuration * distance / totalDistance
-        startTime += duration * 1000
-        const time = new Date(startTime).toISOString()
-        console.log(`---${distance}\t${duration}\t${lastPoint.time.toISOString()}\t${time}`)
-    }
-    console.log('----->', totalDistance / totalDuration * 3.6)
+    buffer += '    </trkseg>\n'
+    buffer += '  </trk>\n'
+    buffer += '</gpx>\n'
+    return buffer
 }
-*/
 
 /*
 let x = Date.parse('2024-10-13T00:19:32')
@@ -127,3 +114,5 @@ console.log(duration2seconds('50'))
 console.log(duration2seconds('1:50'))
 console.log(duration2seconds('1:10:20'))
 */
+
+console.log(printGPX(name, adjusted))

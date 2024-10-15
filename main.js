@@ -1,11 +1,26 @@
 import fs from 'node:fs/promises'
 import GpxParser from 'gpxparser'
 
+
+if (process.argv.length !== 5) {
+    console.error('Usage : node main.js <path-to-gpx-file> <start-datetime> <duration>')
+    console.error('Sample: node main.js ~/my-files/Foo.gpx 2024-10-09T11:18:00 1:53:15')
+    process.exit(-1)
+}
+
+const gpxFilePath = process.argv[2]
+const startTimestamp = Date.parse(process.argv[3])
+const totalDuration = parseDuration(process.argv[4])
+const { name, track } = await readGPXFile(gpxFilePath)
+const adjustedTrack = adjustTimes(track, startTimestamp, totalDuration)
+console.log(printGPX(name, adjustedTrack))
+
+
 function deg2rad(deg) {
     return deg * (Math.PI/180)
 }
 
-function getDistance(lat1, lon1, lat2, lon2) {
+function calcDistance(lat1, lon1, lat2, lon2) {
     const R = 6371 // Radius of the earth in km
     const dLat = deg2rad(lat2-lat1)  // deg2rad below
     const dLon = deg2rad(lon2-lon1)
@@ -18,23 +33,25 @@ function getDistance(lat1, lon1, lat2, lon2) {
     return R * c * 1000 // Return distance in meters
 }
 
-function duration2seconds(duration) {
-    // https://stackoverflow.com/a/45292588
+// Input: 'HH:mm::ss'
+// Output: duration in seconds
+// https://stackoverflow.com/a/45292588
+function parseDuration(duration) {
     const a = duration.split(':')
     return a.reduce((acc, time) => (60 * acc) + parseInt(time), 0)
 }
 
-function getTrackLength(track) {
+function calcTrackLength(track) {
     let distance = 0
     let lastPoint = null
     for (const currPoint of track) {
         if (lastPoint) {
-            distance += getDistance(lastPoint.lat, lastPoint.lon, currPoint.lat, currPoint.lon)
+            distance += calcDistance(lastPoint.lat, lastPoint.lon, currPoint.lat, currPoint.lon)
         }
         lastPoint = currPoint
     }
     if (lastPoint) { // Assume circular track
-        distance += getDistance(track[0].lat, track[0].lon, lastPoint.lat, lastPoint.lon)
+        distance += calcDistance(track[0].lat, track[0].lon, lastPoint.lat, lastPoint.lon)
     }
     return distance
 }
@@ -42,12 +59,12 @@ function getTrackLength(track) {
 function adjustTimes(track, startTime /* in ms since 1970 */, totalDuration /* in seconds */) {
     const results = []
     if (track && track.length > 0) {
-        const totalDistance = getTrackLength(track)
+        const totalDistance = calcTrackLength(track)
         const startPoint = track[0]
         let lastPoint = null
         for (const currPoint of track) {
             if (lastPoint) {
-                const distance = getDistance(lastPoint.lat, lastPoint.lon, currPoint.lat, currPoint.lon)
+                const distance = calcDistance(lastPoint.lat, lastPoint.lon, currPoint.lat, currPoint.lon)
                 startTime += totalDuration * distance / totalDistance * 1000
                 const time = new Date(startTime).toISOString()
                 results.push(Object.assign({}, currPoint, { time }))
@@ -55,7 +72,7 @@ function adjustTimes(track, startTime /* in ms since 1970 */, totalDuration /* i
             lastPoint = currPoint
         }
         if (lastPoint) { // Assume circular track
-            const distance = getDistance(startPoint.lat, startPoint.lon, lastPoint.lat, lastPoint.lon)
+            const distance = calcDistance(startPoint.lat, startPoint.lon, lastPoint.lat, lastPoint.lon)
             startTime += totalDuration * distance / totalDistance * 1000
             const time = new Date(startTime).toISOString()
             results.push(Object.assign({}, lastPoint, { time }))
@@ -82,15 +99,12 @@ async function readGPXFile(filePath) {
     }
 }
 
-let startTime = Date.parse('2024-10-08T11:00:00')
-const totalDuration = duration2seconds('1:25:00')
-const { name, track } = await readGPXFile('/Users/torsten/Downloads/Bali-Marina.gpx')
-const adjusted = adjustTimes(track, startTime, totalDuration)
-
 function printGPX(name, track) {
     let buffer = '<?xml version="1.0" encoding="UTF-8"?>\n'
     buffer += '<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" version="1.1" creator="strava.com">\n'
-    buffer += `<metadata><name>${name}</name></metadata>\n`
+    buffer += '  <metadata>\n'
+    buffer += `    <name>${name}</name>\n`
+    buffer += '  </metadata>\n'
     buffer += '  <trk>\n'
     buffer += `    <name>${name}</name>\n`
     buffer += '    <trkseg>\n'
@@ -105,13 +119,3 @@ function printGPX(name, track) {
     buffer += '</gpx>\n'
     return buffer
 }
-
-/*
-let x = Date.parse('2024-10-13T00:19:32')
-console.log(new Date(x))
-console.log(duration2seconds('50'))
-console.log(duration2seconds('1:50'))
-console.log(duration2seconds('1:10:20'))
-*/
-
-console.log(printGPX(name, adjusted))

@@ -3,17 +3,15 @@
   "version": "1.0.0",
   "main": "main.js",
   "type": "module",
+  "scripts": {
+    "start": "node main.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mouton0815/gpx-time-adjust.git"
   },
   "author": "torsten.schlieder@gmx.net",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/mouton0815/gpx-time-adjust/issues"
-  },
-  "homepage": "https://github.com/mouton0815/gpx-time-adjust#readme",
-  "description": "",
   "dependencies": {
     "gpxparser": "^3.0.8"
   }

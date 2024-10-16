@@ -8,18 +8,23 @@ if (process.argv.length !== 5) {
     process.exit(-1)
 }
 
-const gpxFilePath = process.argv[2]
-const startTimestamp = Date.parse(process.argv[3])
-const totalDuration = parseDuration(process.argv[4])
-const { name, track } = await readGPXFile(gpxFilePath)
-const adjustedTrack = adjustTimes(track, startTimestamp, totalDuration)
-console.log(printGPX(name, adjustedTrack))
+try {
+    const gpxFilePath = process.argv[2]
+    const startTimestamp = Date.parse(process.argv[3])
+    const totalDuration = parseDuration(process.argv[4])
+    const { name, track } = await readGPXFile(gpxFilePath)
+    const adjustedTrack = adjustTimes(track, startTimestamp, totalDuration)
+    console.log(printGPX(name, adjustedTrack))
+} catch (e) {
+    console.error(e)
+}
 
 
 function deg2rad(deg) {
     return deg * (Math.PI/180)
 }
 
+// https://stackoverflow.com/a/27943
 function calcDistance(lat1, lon1, lat2, lon2) {
     const R = 6371 // Radius of the earth in km
     const dLat = deg2rad(lat2-lat1)  // deg2rad below
@@ -41,6 +46,7 @@ function parseDuration(duration) {
     return a.reduce((acc, time) => (60 * acc) + parseInt(time), 0)
 }
 
+// Total distance covered by the track
 function calcTrackLength(track) {
     let distance = 0
     let lastPoint = null
@@ -56,6 +62,9 @@ function calcTrackLength(track) {
     return distance
 }
 
+// Sets new timestamps for each track point
+// The total duration is distributed over the distances between the points
+// in such a way that the total speed is approximately constant
 function adjustTimes(track, startTime /* in ms since 1970 */, totalDuration /* in seconds */) {
     const results = []
     if (track && track.length > 0) {
@@ -82,21 +91,16 @@ function adjustTimes(track, startTime /* in ms since 1970 */, totalDuration /* i
 }
 
 async function readGPXFile(filePath) {
-    try {
-        const data = await fs.readFile(filePath)
-        const gpx = new GpxParser()
-        gpx.parse(data.toString())
-        if (!gpx.tracks || gpx.tracks.length !== 1 || !gpx.tracks[0].points || gpx.tracks[0].points.length < 1) {
-            console.warn('No tracks array in file', filePath)
-        } else {
-            const trk = gpx.tracks[0]
-            const name = trk.name
-            const track = trk.points
-            return { name, track }
-        }
-    } catch (err) {
-        console.warn('Cannot read GPX file', filePath, err)
+    const data = await fs.readFile(filePath)
+    const gpx = new GpxParser()
+    gpx.parse(data.toString())
+    if (!gpx.tracks || gpx.tracks.length !== 1 || !gpx.tracks[0].points || gpx.tracks[0].points.length < 1) {
+        throw `No tracks array in file ${filePath}`
     }
+    const trk = gpx.tracks[0]
+    const name = trk.name
+    const track = trk.points
+    return { name, track }
 }
 
 function printGPX(name, track) {

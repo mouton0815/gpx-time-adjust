@@ -10,7 +10,7 @@ or [BRouter-Web](https://brouter.de/brouter-web)) and then want to add position 
 The reason for writing this tool was a bug in my Garmin vívoactive 4 watch, which occasionally recorded the times —
 but not the corresponding track.
 Since I wanted to display the track on [Strava](https://www.strava.com) (and additionally hunt for [Squadrats](https://squadrats.com)),
-I was looking for a solution to add timestamp information to the route afterward.
+I was looking for a solution to add timestamp information to the route afterwards.
 
 ## Installation
 You need Node.js with npm.

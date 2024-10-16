@@ -1,5 +1,6 @@
 {
   "name": "gpx-time-adjust",
+  "description": "Adjust the timestamps of your manually created GPX tracks",
   "version": "1.0.0",
   "main": "main.js",
   "type": "module",

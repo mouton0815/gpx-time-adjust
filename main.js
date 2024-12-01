@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import GpxParser from 'gpxparser'
 
+const MAX_CYCLE_DIST = 100 // Maximum distance between start and end point for a cyclic routr
 
 if (process.argv.length !== 5) {
     console.error('Usage : node main.js <path-to-gpx-file> <start-datetime> <duration>')
@@ -56,8 +57,11 @@ function calcTrackLength(track) {
         }
         lastPoint = currPoint
     }
-    if (lastPoint) { // Assume circular track
-        distance += calcDistance(track[0].lat, track[0].lon, lastPoint.lat, lastPoint.lon)
+    if (lastPoint) { // Check if it is a circular track
+        const dist = calcDistance(track[0].lat, track[0].lon, lastPoint.lat, lastPoint.lon)
+        if (dist <= MAX_CYCLE_DIST) { // Assume circularity only if first and last point differ no more than 100m
+            distance += dist
+        }
     }
     return distance
 }
@@ -80,11 +84,13 @@ function adjustTimes(track, startTime /* in ms since 1970 */, totalDuration /* i
             }
             lastPoint = currPoint
         }
-        if (lastPoint) { // Assume circular track
+        if (lastPoint) { // Check if it is a circular track
             const distance = calcDistance(startPoint.lat, startPoint.lon, lastPoint.lat, lastPoint.lon)
-            startTime += totalDuration * distance / totalDistance * 1000
-            const time = new Date(startTime).toISOString()
-            results.push(Object.assign({}, lastPoint, { time }))
+            if (distance <= MAX_CYCLE_DIST) { // Assume circularity only if first and last point differ no more than 100m
+                startTime += totalDuration * distance / totalDistance * 1000
+                const time = new Date(startTime).toISOString()
+                results.push(Object.assign({}, lastPoint, { time }))
+            }
         }
     }
     return results

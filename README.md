@@ -20,11 +20,11 @@ npm install
 
 ## Running
 ```shell
-npm start <path-to-gpx-file> <start-datetime> <duration>
+node main.js <path-to-gpx-file> <start-datetime> <duration>
 ```
 The script prints the results to stdout and should be piped to a file.
 
 Example:
 ```shell
-npm start ~/my-files/Foo.gpx 2024-10-09T11:18:00 1:53:15 > ~/my-files/Foo-adjusted.gpx
+node main.js ~/my-files/Foo.gpx 2024-10-09T11:18:00 1:53:15 > ~/my-files/Foo-adjusted.gpx
 ```
